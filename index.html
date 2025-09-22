@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoGauge - 时光计</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+        
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --primary-color: #007bff;
+            --card-bg: #ffffff;
+            --border-color: #dee2e6;
+            --green: #28a745;
+            --red: #dc3545;
+            --shadow: 0 4px A6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        .result-container {
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        #offset-display {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            transition: color 0.3s ease;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #offset-display.loading {
+            color: #6c757d;
+            font-size: 2rem;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .time-box {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .time-box h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            color: #495057;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+        .time-box p {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-color);
+            min-height: 40px;
+        }
+        
+        .sync-button {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .sync-button:hover {
+            background-color: #0056b3;
+        }
+
+        .sync-button:active {
+            transform: scale(0.98);
+        }
+        
+        .sync-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .explanation h2 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .explanation p, .explanation li {
+            line-height: 1.8;
+        }
+        
+        code {
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ChronoGauge - 时光计</h1>
+
+        <div class="card">
+            <div class="result-container">
+                <div class="result-label">您的设备时间与标准时间的差值</div>
+                <div id="offset-display" class="loading">正在校准中...</div>
+            </div>
+            <div class="time-display">
+                <div class="time-box">
+                    <h3>估算标准时间</h3>
+                    <p id="standard-time">--:--:--</p>
+                </div>
+                <div class="time-box">
+                    <h3>您的本地时间</h3>
+                    <p id="local-time">--:--:--</p>
+                </div>
+            </div>
+            <button id="sync-button" class="sync-button">重新校准</button>
+        </div>
+
+        <div class="card explanation">
+            <h2>工作原理</h2>
+            <p>由于网络请求存在延迟，我们无法直接获取并使用服务器的时间。本页面通过模拟**网络时间协议 (NTP)** 的核心思想，来估算并补偿这段延迟。</p>
+            <ol>
+                <li><strong>记录请求时间 (t0)</strong>: 浏览器在发送请求前，记录下当前本地时间。</li>
+                <li><strong>获取服务器时间 (t_server)</strong>: 向后端 API (`/api/time`) 发送请求，服务器立即返回它的当前时间。</li>
+                <li><strong>记录响应时间 (t1)</strong>: 浏览器收到响应后，再次记录下当前本地时间。</li>
+            </ol>
+            <p>通过这三个时间戳，我们可以进行计算：</p>
+            <ul>
+                <li><strong>网络往返延迟 (RTT)</strong>: 整个请求过程的总耗时为 <code>RTT = t1 - t0</code>。</li>
+                <li><strong>估算单程延迟</strong>: 我们假设去程和返程的延迟相等，即单程延迟为 <code>RTT / 2</code>。</li>
+                <li><strong>计算时间差 (Offset)</strong>: 客户端时间与校准后的服务器时间之差就是我们最终的结果。计算公式为：<br>
+                <code>Offset = t1 - (t_server + RTT / 2)</code></li>
+            </ul>
+            <p>为了提高精度，本页面会进行多次测量，并选取其中网络延迟最低的一次结果作为最终展示，以最大程度地排除网络拥堵带来的误差。</p>
+        </div>
+    </div>
+
+    <script>
+        const offsetDisplay = document.getElementById('offset-display');
+        const standardTimeDisplay = document.getElementById('standard-time');
+        const localTimeDisplay = document.getElementById('local-time');
+        const syncButton = document.getElementById('sync-button');
+
+        // 后端 API 的地址。因为是同站部署，直接使用相对路径即可。
+        const API_ENDPOINT = '/api/time';
+
+        let timeOffset = 0;
+        let localTimeInterval;
+
+        // 格式化时间为 HH:mm:ss.SSS
+        function formatTime(date) {
+            const h = String(date.getHours()).padStart(2, '0');
+            const m = String(date.getMinutes()).padStart(2, '0');
+            const s = String(date.getSeconds()).padStart(2, '0');
+            const ms = String(date.getMilliseconds()).padStart(3, '0');
+            return `${h}:${m}:${s}.${ms}`;
+        }
+
+        // 更新本地和标准时间的显示
+        function updateClocks() {
+            const now = new Date();
+            const standardTime = new Date(now.getTime() - timeOffset);
+            
+            localTimeDisplay.textContent = formatTime(now);
+            standardTimeDisplay.textContent = formatTime(standardTime);
+        }
+
+        // 核心同步函数
+        async function syncTime() {
+            offsetDisplay.innerHTML = '正在校准中...';
+            offsetDisplay.classList.add('loading');
+            syncButton.disabled = true;
+
+            const samples = [];
+            const sampleCount = 5;
+
+            try {
+                // 进行多次采样
+                for (let i = 0; i < sampleCount; i++) {
+                    const t0 = Date.now();
+                    const response = await fetch(API_ENDPOINT);
+                    if (!response.ok) throw new Error('Network response was not ok.');
+                    const data = await response.json();
+                    const t1 = Date.now();
+                    
+                    const rtt = t1 - t0;
+                    const offset = t1 - (data.serverTime + rtt / 2);
+                    samples.push({ rtt, offset });
+                }
+
+                // 找到 RTT 最小（网络延迟最低）的一次采样
+                const bestSample = samples.reduce((best, current) => current.rtt < best.rtt ? current : best);
+                timeOffset = bestSample.offset;
+
+                const offsetValue = Math.round(timeOffset);
+                let message, color;
+
+                if (Math.abs(offsetValue) < 150) { // 提高容错阈值
+                    message = `时间基本同步`;
+                    color = 'var(--green)';
+                } else if (offsetValue > 0) {
+                    message = `本地时间偏快 <span style="font-size: 4.5rem; display: block; margin-top: 5px;">${offsetValue}</span> 毫秒`;
+                    color = 'var(--red)';
+                } else {
+                    message = `本地时间偏慢 <span style="font-size: 4.5rem; display: block; margin-top: 5px;">${Math.abs(offsetValue)}</span> 毫秒`;
+                    color = 'var(--green)';
+                }
+
+                offsetDisplay.innerHTML = message;
+                offsetDisplay.style.color = color;
+                offsetDisplay.classList.remove('loading');
+
+                // 启动时钟更新
+                if (localTimeInterval) clearInterval(localTimeInterval);
+                localTimeInterval = setInterval(updateClocks, 100);
+                updateClocks();
+
+            } catch (error) {
+                console.error('Time sync failed:', error);
+                offsetDisplay.textContent = '校准失败';
+                offsetDisplay.style.color = 'var(--red)';
+            } finally {
+                syncButton.disabled = false;
+            }
+        }
+        
+        syncButton.addEventListener('click', syncTime);
+
+        // 页面加载后自动开始同步
+        document.addEventListener('DOMContentLoaded', () => {
+            syncTime();
+            // 每60秒自动重新校准一次
+            setInterval(syncTime, 60000);
+        });
+    </script>
+</body>
+</html>
