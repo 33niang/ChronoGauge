@@ -2,8 +2,7 @@
 
 一个基于 Serverless 架构的高精度网络时间同步校准网页。
 
-[![Deploy to Cloudflare Pages](https://static.cloudflarebadges.com/deploy-with-cloudflare-pages-dark.svg)](https://deploy.workers.cloudflare.com/?url=https://github.com/your-username/your-repo-name)
-
+[![Deploy to Cloudflare Pages](https://static.cloudflarebadges.com/deploy-with-cloudflare-pages-dark.svg)](https://deploy.workers.cloudflare.com/?url=https://github.com/33niang/chronogauge)
 ## ✨ 项目简介
 
 ChronoGauge (时光计) 是一个部署在边缘网络的 Web 应用，用于精确计算并展示用户设备时间与标准原子时间的差值。它解决了网络延迟带来的误差问题，提供了一个美观、实时的时钟校准界面。
