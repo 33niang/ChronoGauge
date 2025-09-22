@@ -15,7 +15,11 @@
             --border-color: #dee2e6;
             --green: #28a745;
             --red: #dc3545;
-            --shadow: 0 4px A6px rgba(0, 0, 0, 0.1);
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        html, body {
+            height: 100%;
         }
 
         body {
@@ -23,11 +27,18 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
             box-sizing: border-box;
         }
 
@@ -148,49 +159,80 @@
             border-radius: 4px;
             font-family: monospace;
         }
+
+        /* 页脚样式 */
+        .footer {
+            flex-shrink: 0;
+            width: 100%;
+            text-align: center;
+            padding: 20px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+        }
+
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 15px;
+            transition: color 0.2s ease;
+        }
+
+        .footer a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>ChronoGauge - 时光计</h1>
+    <div class="main-content">
+        <div class="container">
+            <h1>ChronoGauge - 时光计</h1>
 
-        <div class="card">
-            <div class="result-container">
-                <div class="result-label">您的设备时间与标准时间的差值</div>
-                <div id="offset-display" class="loading">正在校准中...</div>
-            </div>
-            <div class="time-display">
-                <div class="time-box">
-                    <h3>估算标准时间</h3>
-                    <p id="standard-time">--:--:--</p>
+            <div class="card">
+                <div class="result-container">
+                    <div class="result-label">您的设备时间与标准时间的差值</div>
+                    <div id="offset-display" class="loading">正在校准中...</div>
                 </div>
-                <div class="time-box">
-                    <h3>您的本地时间</h3>
-                    <p id="local-time">--:--:--</p>
+                <div class="time-display">
+                    <div class="time-box">
+                        <h3>估算标准时间</h3>
+                        <p id="standard-time">--:--:--</p>
+                    </div>
+                    <div class="time-box">
+                        <h3>您的本地时间</h3>
+                        <p id="local-time">--:--:--</p>
+                    </div>
                 </div>
+                <button id="sync-button" class="sync-button">重新校准</button>
             </div>
-            <button id="sync-button" class="sync-button">重新校准</button>
-        </div>
 
-        <div class="card explanation">
-            <h2>工作原理</h2>
-            <p>由于网络请求存在延迟，我们无法直接获取并使用服务器的时间。本页面通过模拟**网络时间协议 (NTP)** 的核心思想，来估算并补偿这段延迟。</p>
-            <ol>
-                <li><strong>记录请求时间 (t0)</strong>: 浏览器在发送请求前，记录下当前本地时间。</li>
-                <li><strong>获取服务器时间 (t_server)</strong>: 向后端 API (`/api/time`) 发送请求，服务器立即返回它的当前时间。</li>
-                <li><strong>记录响应时间 (t1)</strong>: 浏览器收到响应后，再次记录下当前本地时间。</li>
-            </ol>
-            <p>通过这三个时间戳，我们可以进行计算：</p>
-            <ul>
-                <li><strong>网络往返延迟 (RTT)</strong>: 整个请求过程的总耗时为 <code>RTT = t1 - t0</code>。</li>
-                <li><strong>估算单程延迟</strong>: 我们假设去程和返程的延迟相等，即单程延迟为 <code>RTT / 2</code>。</li>
-                <li><strong>计算时间差 (Offset)</strong>: 客户端时间与校准后的服务器时间之差就是我们最终的结果。计算公式为：<br>
-                <code>Offset = t1 - (t_server + RTT / 2)</code></li>
-            </ul>
-            <p>为了提高精度，本页面会进行多次测量，并选取其中网络延迟最低的一次结果作为最终展示，以最大程度地排除网络拥堵带来的误差。</p>
+            <div class="card explanation">
+                <h2>工作原理</h2>
+                <p>由于网络请求存在延迟，我们无法直接获取并使用服务器的时间。本页面通过模拟**网络时间协议 (NTP)** 的核心思想，来估算并补偿这段延迟。</p>
+                <ol>
+                    <li><strong>记录请求时间 (t0)</strong>: 浏览器在发送请求前，记录下当前本地时间。</li>
+                    <li><strong>获取服务器时间 (t_server)</strong>: 向后端 API (`/api/time`) 发送请求，服务器立即返回它的当前时间。</li>
+                    <li><strong>记录响应时间 (t1)</strong>: 浏览器收到响应后，再次记录下当前本地时间。</li>
+                </ol>
+                <p>通过这三个时间戳，我们可以进行计算：</p>
+                <ul>
+                    <li><strong>网络往返延迟 (RTT)</strong>: 整个请求过程的总耗时为 <code>RTT = t1 - t0</code>。</li>
+                    <li><strong>估算单程延迟</strong>: 我们假设去程和返程的延迟相等，即单程延迟为 <code>RTT / 2</code>。</li>
+                    <li><strong>计算时间差 (Offset)</strong>: 客户端时间与校准后的服务器时间之差就是我们最终的结果。计算公式为：<br>
+                    <code>Offset = t1 - (t_server + RTT / 2)</code></li>
+                </ul>
+                <p>为了提高精度，本页面会进行多次测量，并选取其中网络延迟最低的一次结果作为最终展示，以最大程度地排除网络拥堵带来的误差。</p>
+            </div>
         </div>
     </div>
+
+    <footer class="footer">
+        <a href="https://status.zhou.su" target="_blank" rel="noopener noreferrer">站点状态</a>
+        <a href="https://zhou.su" target="_blank" rel="noopener noreferrer">主页导航</a>
+    </footer>
 
     <script>
         const offsetDisplay = document.getElementById('offset-display');
