@@ -172,16 +172,22 @@
             background-color: var(--card-bg);
         }
 
-        .footer a {
+        .footer-links a {
             color: var(--primary-color);
             text-decoration: none;
             margin: 0 15px;
             transition: color 0.2s ease;
         }
 
-        .footer a:hover {
+        .footer-links a:hover {
             color: #0056b3;
             text-decoration: underline;
+        }
+        
+        .footer-signature {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #828a93;
         }
     </style>
 </head>
@@ -230,8 +236,13 @@
     </div>
 
     <footer class="footer">
-        <a href="https://status.zhou.su" target="_blank" rel="noopener noreferrer">站点状态</a>
-        <a href="https://zhou.su" target="_blank" rel="noopener noreferrer">主页导航</a>
+        <div class="footer-links">
+            <a href="https://status.zhou.su" target="_blank" rel="noopener noreferrer">站点状态</a>
+            <a href="https://zhou.su" target="_blank" rel="noopener noreferrer">主页导航</a>
+        </div>
+        <div class="footer-signature">
+            sansan
+        </div>
     </footer>
 
     <script>
